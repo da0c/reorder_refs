@@ -21,6 +21,7 @@ import sys
 import pprint
 from loguru import logger as log
 
+
 # --------------------------------------------------------------------------
 def logging_setup(config):
     log_file = sys.stdout
@@ -43,12 +44,12 @@ def logging_setup(config):
         level=config['options']['loglevel'],
     )
 
+
 # --------------------------------------------------------------------------
 def load_config(fname):
-    
     with open(fname) as f:
         lines = f.readlines()
-    
+
     toml_str = ""
     for line in lines:
         if ":" in line:
@@ -59,18 +60,18 @@ def load_config(fname):
             else:
                 line = f"\"{line[:-1]}\""
             line = line.replace('=', '"="')
-    
+
         toml_str += line + "\n"
-      
+
     config = toml.loads(toml_str)
     if config['options']['loglevel'] == 'DEBUG':
         log.debug(toml_str)
 
     return config
 
+
 # --------------------------------------------------------------------------
 def load_rules(config):
-    
     if 'reorder_rules' in config:
         rules = config['reorder_rules']
     else:
@@ -78,12 +79,12 @@ def load_rules(config):
 
     old_refs = []
     new_refs = []
-    
+
     for k in rules:
         old_bounds = k.split(":")
-        old = list(range(int(old_bounds[0]), int(old_bounds[1])+1))
+        old = list(range(int(old_bounds[0]), int(old_bounds[1]) + 1))
         new_bounds = rules[k].split(":")
-        new = list(range(int(new_bounds[0]), int(new_bounds[1])+1))
+        new = list(range(int(new_bounds[0]), int(new_bounds[1]) + 1))
 
         old_refs.extend(old)
         new_refs.extend(new)
@@ -98,6 +99,7 @@ def load_rules(config):
 
     return renumber_rules
 
+
 # --------------------------------------------------------------------------
 def check_refs(document, config):
     multi = False
@@ -107,12 +109,12 @@ def check_refs(document, config):
         if '[' in par.text:
             multi_refs = re.findall(r'\[\D*\d+[ ]*-[ ]*\D*\d+]', par.text)
             if multi_refs:
-                log.warning(f"Multi refs: {multi_refs}")                        
+                log.warning(f"Multi refs: {multi_refs}")
                 multi = True
 
             prefix_refs = re.findall(r'\[\D+\d+\]', par.text)
             if prefix_refs:
-                log.warning(f"Prefix refs: {prefix_refs}")                        
+                log.warning(f"Prefix refs: {prefix_refs}")
                 prefix = True
 
     if multi:
@@ -127,14 +129,27 @@ def check_refs(document, config):
         if config['options'].get('stop_on_prefix_refs', True):
             raise Exception("Prefix refs")
 
-# --------------------------------------------------------------------------
-def reorder_by_rules(document, rules):
 
+# --------------------------------------------------------------------------
+def save_reordered_refs(rules, long_ranges, config):
+    file_name = config['options'].get('reordered_refs_file', "reordered_refs.txt")
+    with open(file_name, 'w') as f:
+        f.write("Reordering: old_ref -> new_ref\n")
+        for old_ref in rules:
+            f.write(f"{old_ref} -> {rules[old_ref]}\n")
+
+        if long_ranges:
+            f.write("\nFound long refs ranges:\n")
+            f.write(f"{long_ranges}")
+
+
+# --------------------------------------------------------------------------
+def reorder_by_rules(document, rules, config):
     log.info("Reordering by rules started...")
     passed_refs = {}
     for old_ref, new_ref in rules.items():
-        passed_refs[old_ref] = 0         
-    
+        passed_refs[old_ref] = 0
+
     for par in document.paragraphs:
         if '[' in par.text:
             single_refs = re.findall(r'\[\d+]', par.text)
@@ -143,14 +158,14 @@ def reorder_by_rules(document, rules):
                 new_text = par.text
                 for ref in single_refs:
                     old_ref = int(ref[1:-1])
-        
+
                     new_ref = rules[old_ref]
                     passed_refs[old_ref] += 1
 
                     log.info(f"{ref} -> [{new_ref}]")
                     new_text = new_text.replace(ref, f"[*{new_ref}]")
                     par.text = new_text
-    
+
     errors = 0
     for old_ref, counter in passed_refs.items():
         if counter == 0:
@@ -160,9 +175,10 @@ def reorder_by_rules(document, rules):
             errors += 1
             log.warning(f"Old ref [{old_ref}] never used!")
 
-# --------------------------------------------------------------------------
-def auto_reorder(document):
+    save_reordered_refs(rules, [], config)
 
+# --------------------------------------------------------------------------
+def auto_reorder(document, config):
     log.info("Auto reordering started...")
 
     rules = {}
@@ -170,7 +186,7 @@ def auto_reorder(document):
     for par in document.paragraphs:
         if '[' not in par.text:
             continue
-        
+
         text = par.text
         old_ref_strings = re.findall(r'\[\D*\d+[ ]*-[ ]*\D*\d+]|\[\D*\d+]', text)
         log.debug(old_ref_strings)
@@ -190,18 +206,18 @@ def auto_reorder(document):
                     if prefs[0] != pref:
                         log.error("Wrong prefix: {r}")
                         raise Exception("Wrong prefix")
-                    
-                start = int(rr[0].replace(pref,""))
-                stop = int(rr[1].replace(pref,""))+1
-    
+
+                start = int(rr[0].replace(pref, ""))
+                stop = int(rr[1].replace(pref, "")) + 1
+
                 ref_range = list(range(start, stop))
                 ref_range = list(map(lambda x: pref + str(x), ref_range))
-    
+
             else:
                 ref_range = [str(r)]
-    
-            #print(ref_range)
-    
+
+            # print(ref_range)
+
             new_ref_string = ""
             for ref in ref_range:
                 if not rules.get(ref):
@@ -215,20 +231,22 @@ def auto_reorder(document):
 
             new_text = new_text.replace(old_ref_string, new_ref_string)
             par.text = new_text
-    
+
     srules = pprint.pformat(rules, sort_dicts=False)
 
     log.info(f"Reordered refs: \n{srules}")
-
     if long_ranges:
         log.warning("Found long refs ranges:")
         log.warning(long_ranges)
 
+    save_reordered_refs(rules, long_ranges, config)
+
+
 # --------------------------------------------------------------------------
 def parse_args():
     parser = argparse.ArgumentParser(
-            description="References reordering in .docx documents",
-            epilog="Example: python reorder_refs.py input.docx output.docx rules.conf")
+        description="References reordering in .docx documents",
+        epilog="Example: python reorder_refs.py input.docx output.docx rules.conf")
 
     parser.add_argument('in_file', help='Input file name (.docx)')
     parser.add_argument('out_file', help='Output file name (.docx)')
@@ -236,9 +254,9 @@ def parse_args():
     args = vars(parser.parse_args())
     return args
 
+
 # --------------------------------------------------------------------------
 def main():
-    
     args = parse_args()
 
     config = load_config(args["conf_file"])
@@ -248,16 +266,15 @@ def main():
     document = Document(args["in_file"])
 
     if config['options'].get('auto_reorder', False):
-        auto_reorder(document)
-    else:        
+        auto_reorder(document, config)
+    else:
         rules = load_rules(config)
         check_refs(document, config)
-        reorder_by_rules(document, rules)
-    
+        reorder_by_rules(document, rules, config)
+
     document.save(args["out_file"])
 
 
 # --------------------------------------------------------------------------
 if __name__ == '__main__':
     main()
-
