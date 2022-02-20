@@ -66,8 +66,7 @@ def load_config(fname):
             line = line.replace('=', '"="')
     
         toml_str += line + "\n"
-    
-        
+      
     config = toml.loads(toml_str)
     if config['options']['loglevel'] == 'DEBUG':
         log.debug(toml_str)
@@ -137,7 +136,7 @@ def check_refs(document, config):
 # --------------------------------------------------------------------------
 def reorder_by_rules(document, rules):
 
-    log.info("Reorder by rules started...")
+    log.info("Reordering by rules started...")
     passed_refs = {}
     for old_ref, new_ref in rules.items():
         passed_refs[old_ref] = 0         
@@ -170,7 +169,7 @@ def reorder_by_rules(document, rules):
 # --------------------------------------------------------------------------
 def auto_reorder(document):
 
-    log.info("Auto reorder started...")
+    log.info("Auto reordering started...")
 
     rules = {}
     long_ranges = []
