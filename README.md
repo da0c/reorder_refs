@@ -8,7 +8,7 @@ If you don't use something like EndNote this is for you.
 python reorder_refs.py input.docx output.docx rules.conf  
 ```  
 After this you get output.docx with reordered references.
-Each processed references will be marked with *, like [*1]
+Each processed references will be marked with *, like [*1]  
 **Important** - see the console output for reordered references list.
 
 See the `rules.conf` sample for configuration details.  
