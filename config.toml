@@ -1,0 +1,41 @@
+# This configuration file is ready for use
+
+[options]
+
+# auto_reorder = 1 is default mode
+# all refs are reordered according to appearance order
+auto_reorder = 1
+
+reordered_refs_file = "reordered_refs.txt"
+
+
+# put here the document with references only and it will be reordered
+# IMPORTANT: the document must contain only paragraphs with references
+ref_list_file = "Ref_list.docx"
+
+loglevel = "DEBUG"
+#loglevel = "INFO"
+
+
+# *** The rest is ignored if auto_reorder == 1 ***
+
+# IF auto_reorder = 1 THIS PARAMETER IS IGNORED
+# if 0 refs like [1-8] will be ignored
+
+stop_on_multiple_refs = 0
+
+# IF auto_reorder = 1 THIS PARAMETER IS IGNORED
+# if 0 refs with prefix like [MP17] will be ignored
+stop_on_prefix_refs = 0
+
+# IF auto_reorder = 1 THIS SECTION IS IGNORED
+# rules for references reordering
+[reorder_rules]
+
+# old refs on the left, new refs on the right
+"1:8" = "1:8"       # leave refs 1:8 unchanged
+"9:43" = "18:52"    # change refs 1:8 to 18:52
+"44:52" = "9:17"    # change refs 44:52 to 9:17
+
+
+

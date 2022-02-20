@@ -47,25 +47,9 @@ def logging_setup(config):
 
 # --------------------------------------------------------------------------
 def load_config(fname):
-    with open(fname) as f:
-        lines = f.readlines()
-
-    toml_str = ""
-    for line in lines:
-        if ":" in line:
-            line = line.replace(' ', '')
-            if "#" in line:
-                line = f"\"{line[:-1]}"
-                line = line.replace('#', '" #')
-            else:
-                line = f"\"{line[:-1]}\""
-            line = line.replace('=', '"="')
-
-        toml_str += line + "\n"
-
-    config = toml.loads(toml_str)
-    if config['options']['loglevel'] == 'DEBUG':
-        log.debug(toml_str)
+    with open(fname, 'rb') as f:
+        #lines = f.readlines()
+        config = toml.load(f)
 
     return config
 
@@ -92,7 +76,7 @@ def load_rules(config):
     log.debug(old_refs)
     log.debug(new_refs)
     renumber_rules = {}
-    ind = 0;
+    ind = 0
     for k in old_refs:
         renumber_rules[k] = new_refs[ind]
         ind += 1
@@ -177,6 +161,9 @@ def reorder_by_rules(document, rules, config):
 
     save_reordered_refs(rules, [], config)
 
+    return rules
+
+
 # --------------------------------------------------------------------------
 def auto_reorder(document, config):
     log.info("Auto reordering started...")
@@ -216,8 +203,6 @@ def auto_reorder(document, config):
             else:
                 ref_range = [str(r)]
 
-            # print(ref_range)
-
             new_ref_string = ""
             for ref in ref_range:
                 if not rules.get(ref):
@@ -232,14 +217,54 @@ def auto_reorder(document, config):
             new_text = new_text.replace(old_ref_string, new_ref_string)
             par.text = new_text
 
-    srules = pprint.pformat(rules, sort_dicts=False)
+    str_rules = pprint.pformat(rules, sort_dicts=False)
 
-    log.info(f"Reordered refs: \n{srules}")
+    log.info(f"Reordered refs: \n{str_rules}")
     if long_ranges:
         log.warning("Found long refs ranges:")
         log.warning(long_ranges)
 
     save_reordered_refs(rules, long_ranges, config)
+
+    return rules
+
+
+# --------------------------------------------------------------------------
+def reorder_ref_list(config, rules):
+    ref_list_file = config["options"].get("ref_list_file")
+    if not ref_list_file:
+        log.info("\nReordering ref list skipped")
+        return
+
+    log.info("\nReordering ref list started...")
+    try:
+        document = Document(ref_list_file)
+    except Exception as E:
+        log.error(f"File not found: {ref_list_file}")
+        log.error(f"Reordering ref list skipped")
+        return
+
+    old_list = []
+    for par in document.paragraphs:
+        old_list.append(par.text)
+
+    ind = 0
+    old_refs = list(rules)
+    for par in document.paragraphs:
+        if str(ind+1) not in old_refs:
+            log.warning(f"Missed old ref [{ind+1}]")
+
+        if ind >= len(old_refs):
+            par.text = ""
+            continue
+
+        par.text = old_list[int(old_refs[ind]) - 1]
+        ind += 1
+
+    new_ref_list_file = ref_list_file.replace('.', '_reordered.')
+    new_ref_list_file = config["options"].get("new_ref_list_file", new_ref_list_file)
+    log.info(f"Saving reordered ref list to {new_ref_list_file}")
+    document.save(new_ref_list_file)
 
 
 # --------------------------------------------------------------------------
@@ -263,16 +288,21 @@ def main():
 
     logging_setup(config)
 
+    log.info(f"Open input document {args['in_file']}")
     document = Document(args["in_file"])
 
+    rules = []
     if config['options'].get('auto_reorder', False):
-        auto_reorder(document, config)
+        rules = auto_reorder(document, config)
     else:
         rules = load_rules(config)
         check_refs(document, config)
         reorder_by_rules(document, rules, config)
 
+    log.info(f"Saving output document to {args['out_file']}")
     document.save(args["out_file"])
+
+    reorder_ref_list(config, rules)
 
 
 # --------------------------------------------------------------------------
