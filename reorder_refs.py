@@ -13,7 +13,6 @@ See the rules.conf sample for configuration details.
 Written by prof. Artem Nikonorov artniko@gmail.com
 """
 
-
 from docx import Document
 import pytoml as toml
 import argparse
@@ -240,7 +239,7 @@ def parse_args():
 
     parser.add_argument('in_file', help='Input file name (.docx)')
     parser.add_argument('out_file', help='Output file name (.docx)')
-    parser.add_argument('conf_file', help='File with renumbering rules')
+    parser.add_argument('conf_file', help='Confug file with reordering rules')
     args = vars(parser.parse_args())
     return args
 
