@@ -223,7 +223,6 @@ def auto_reorder(document):
 
             new_text = new_text.replace(old_ref_string, new_ref_string)
             par.text = new_text
-
     
     srules = pprint.pformat(rules, sort_dicts=False)
 
@@ -232,7 +231,6 @@ def auto_reorder(document):
     if long_ranges:
         log.warning("Found long refs ranges:")
         log.warning(long_ranges)
-
 
 # --------------------------------------------------------------------------
 def parse_args():
@@ -254,7 +252,6 @@ def main():
     config = load_config(args["conf_file"])
 
     logging_setup(config)
-
 
     document = Document(args["in_file"])
 
