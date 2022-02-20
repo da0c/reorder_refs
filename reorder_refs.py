@@ -23,12 +23,7 @@ from loguru import logger as log
 
 # --------------------------------------------------------------------------
 def logging_setup(config):
-    if sys.platform == 'win32' and sys.executable.lower().endswith('pythonw.exe'):
-        log_file = get_app_config_dir() / f'{config.APP_NAME}.log'
-        sys.stdout = open(os.devnull, "w")
-        sys.stderr = sys.stdout
-    else:
-        log_file = sys.stdout
+    log_file = sys.stdout
 
     format_long = (
         '<g>{time:YYYY-MM-DD hh:mm:ss}</g> | '
@@ -102,7 +97,6 @@ def load_rules(config):
         ind += 1
 
     return renumber_rules
-
 
 # --------------------------------------------------------------------------
 def check_refs(document, config):
