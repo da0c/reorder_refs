@@ -1,7 +1,8 @@
 # reorder_refs
 
 This is a utility for reordering references in `.docx` documents, e.g. manuscripts or reports.  
-If you don't use something like EndNote it is for you.  
+If you don't use something like EndNote or Zotero it is for you.  
+Zotero is really great, but if you need to make up a certain manuscript only - `reorder_refs` will help.   
   
 **Usage:**  
 ```
