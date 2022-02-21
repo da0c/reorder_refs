@@ -275,7 +275,7 @@ def parse_args():
 
     parser.add_argument('in_file', help='Input file name (.docx)')
     parser.add_argument('out_file', help='Output file name (.docx)')
-    parser.add_argument('conf_file', help='Confug file with reordering rules')
+    parser.add_argument('conf_file', help='Config file with reordering rules (.toml)')
     args = vars(parser.parse_args())
     return args
 
