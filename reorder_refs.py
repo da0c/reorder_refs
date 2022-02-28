@@ -115,6 +115,21 @@ def check_refs(document, config):
 
 
 # --------------------------------------------------------------------------
+def check_final_doc(document):
+    skipped = False
+
+    for par in document.paragraphs:
+        if '[' in par.text:
+            skipped_refs = re.findall(r'\[[A-Za-z]*\d+', par.text)
+            if skipped_refs:
+                log.warning(f"Skipped refs: {skipped_refs}")
+                skipped = True
+
+    if skipped:
+        log.error(f"Multiple refs present, change these manually!\n")
+
+
+# --------------------------------------------------------------------------
 def save_reordered_refs(rules, long_ranges, config):
     file_name = config['options'].get('reordered_refs_file', "reordered_refs.txt")
     with open(file_name, 'w') as f:
@@ -299,9 +314,10 @@ def main():
         check_refs(document, config)
         reorder_by_rules(document, rules, config)
 
+    check_final_doc(document)
+
     log.info(f"Saving output document to {args['out_file']}")
     document.save(args["out_file"])
-
     reorder_ref_list(config, rules)
 
 
